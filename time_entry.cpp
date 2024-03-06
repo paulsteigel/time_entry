@@ -1,27 +1,46 @@
 #include "esphome.h"
 
-class TimeEntryComponent : public Component {
+class TimeEntryComponent : public Component, public CustomMQTTDevice {
  public:
+  // Constructor
+  TimeEntryComponent() : CustomMQTTDevice() {}
+
   void setup() override {
-    // Initialize your component here
-    // For example, you can subscribe to MQTT topics or initialize necessary pins
-    // Subscribe to a topic where you will receive the scheduled work time
-    subscribe("homeassistant/switch/work_time/set", &TimeEntryComponent::on_time_set_);
+    // Subscribe to the MQTT topics for start and end times
+    subscribe("homeassistant/switch/start_time/set", [this](const std::string& message) {
+      this->onStartTimeSet(message);
+    });
+    subscribe("homeassistant/switch/end_time/set", [this](const std::string& message) {
+      this->onEndTimeSet(message);
+    });
   }
 
-  void loop() override {
-    // Implement any necessary periodic tasks here
-  }
-
-  void on_time_set_(const std::string& message) {
-    // Parse the received message to extract the scheduled work time
-    // For simplicity, let's assume the message is in the format "HH:MM"
+  void onStartTimeSet(const std::string& message) {
+    // Parse the received message to extract the start time
     int hour = atoi(message.substr(0, 2).c_str());
     int minute = atoi(message.substr(3, 2).c_str());
 
-    // Now you can implement actions to be triggered at the scheduled work time
-    // For this example, let's just log the scheduled time
-    ESP_LOGI("TimeEntryComponent", "Work scheduled for %02d:%02d", hour, minute);
+    // Log the scheduled start time
+    ESP_LOGI("TimeEntryComponent", "Work scheduled to start at %02d:%02d", hour, minute);
+
+    // Trigger any actions here according to the scheduled start time
+    // For example, you can turn on a relay, trigger a sensor, etc.
+    // Example:
+    // digitalWrite(RELAY_PIN, HIGH); // Turn on a relay
+  }
+
+  void onEndTimeSet(const std::string& message) {
+    // Parse the received message to extract the end time
+    int hour = atoi(message.substr(0, 2).c_str());
+    int minute = atoi(message.substr(3, 2).c_str());
+
+    // Log the scheduled end time
+    ESP_LOGI("TimeEntryComponent", "Work scheduled to end at %02d:%02d", hour, minute);
+
+    // Trigger any actions here according to the scheduled end time
+    // For example, you can turn off a relay, reset a sensor, etc.
+    // Example:
+    // digitalWrite(RELAY_PIN, LOW); // Turn off a relay
   }
 };
 
